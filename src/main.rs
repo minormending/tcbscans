@@ -38,16 +38,12 @@ fn main() {
             let mangas: Vec<Manga> = get_mangas();
             let mut manga: Option<&Manga> = None;
             if let Some(slug) = slug {
-                manga = mangas
-                    .iter()
-                    .find(|&m| &m.slug == slug);
-            } 
+                manga = mangas.iter().find(|&m| &m.slug == slug);
+            }
             if manga.is_none() {
                 if let Some(id) = id {
                     let id: String = format!("{}", id);
-                    manga = mangas
-                        .iter()
-                        .find(|&m| &m.id == &id);
+                    manga = mangas.iter().find(|&m| &m.id == &id);
                 }
             }
 
