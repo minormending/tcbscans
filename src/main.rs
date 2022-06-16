@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use tcbscans::{get_chapters, get_mangas, Manga};
+use tcbscans::{get_chapters, get_mangas, Manga, Chapter};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -49,11 +49,10 @@ fn main() {
                         .iter()
                         .find(|&m| &m.id == &id);
                 }
-            } 
-            
-            let manga: &Manga = manga
-                .expect("Unable to find manga using slug or id.");
-            let chapters = get_chapters(manga);
+            }
+
+            let manga: &Manga = manga.expect("Unable to find manga using slug or id.");
+            let chapters: Vec<Chapter> = get_chapters(manga);
             for chapter in chapters {
                 let json = serde_json::to_string(&chapter).unwrap();
                 println!("{}", &json)

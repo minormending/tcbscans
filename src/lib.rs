@@ -43,12 +43,13 @@ fn get_mangas_from_page(page: &str) -> Vec<Manga> {
 
     let mut mangas: Vec<Manga> = Vec::new();
     for cap in re.captures_iter(page) {
-        if cap[3].trim().is_empty() {
+        let name: &str = cap[3].trim();
+        if name.is_empty() {
             continue;
         }
         mangas.push(Manga {
             id: cap[1].to_string(),
-            name: cap[3].to_string(),
+            name: name.to_string(),
             slug: cap[2].to_string(),
         });
     }
@@ -58,14 +59,15 @@ fn get_mangas_from_page(page: &str) -> Vec<Manga> {
 fn get_chapters_from_page(page: &str) -> Vec<Manga> {
     let re: Regex = Regex::new(r#"(?s)href="/chapters/(\d*)/([^"]*)"[^>]*>(.*?)</a>"#).unwrap();
 
-    let mut chapters: Vec<Manga> = Vec::new();
+    let mut chapters: Vec<Chapter> = Vec::new();
     for cap in re.captures_iter(page) {
         if cap[3].trim().is_empty() {
             continue;
         }
         chapters.push(Manga {
+        chapters.push(Chapter {
             id: cap[1].to_string(),
-            name: cap[3].to_string(),
+            name: name,
             slug: cap[2].to_string(),
         });
     }
