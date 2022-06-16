@@ -9,12 +9,19 @@ pub struct Manga {
     pub slug: String,
 }
 
+#[derive(Serialize, Debug)]
+pub struct Chapter {
+    pub id: String,
+    pub name: String,
+    pub slug: String,
+}
+
 pub fn get_mangas() -> Vec<Manga> {
     let html: String = get_mangas_page().expect("Unable to get mangas from site.");
     get_mangas_from_page(&html)
 }
 
-pub fn get_chapters(manga: &Manga) -> Vec<Manga> {
+pub fn get_chapters(manga: &Manga) -> Vec<Chapter> {
     let html = get_chapters_page(&manga).expect("Unable to get chapters from site.");
     get_chapters_from_page(&html)
 }
@@ -56,15 +63,24 @@ fn get_mangas_from_page(page: &str) -> Vec<Manga> {
     mangas
 }
 
-fn get_chapters_from_page(page: &str) -> Vec<Manga> {
+fn get_chapters_from_page(page: &str) -> Vec<Chapter> {
     let re: Regex = Regex::new(r#"(?s)href="/chapters/(\d*)/([^"]*)"[^>]*>(.*?)</a>"#).unwrap();
+    let re_name: Regex = Regex::new(r"<div[^>]*>\s*([^<]+)\s*</div>").unwrap();
 
     let mut chapters: Vec<Chapter> = Vec::new();
     for cap in re.captures_iter(page) {
-        if cap[3].trim().is_empty() {
+        let name: &str = cap[3].trim();
+        if name.is_empty() {
             continue;
         }
-        chapters.push(Manga {
+
+        // sometimes the name is `Series Chapter X: Title`
+        let names = re_name
+            .captures_iter(name)
+            .map(|c| c[1].to_string())
+            .collect::<Vec<String>>();
+        let name: String = names.join(": ");
+
         chapters.push(Chapter {
             id: cap[1].to_string(),
             name: name,
