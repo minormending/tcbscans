@@ -1,4 +1,7 @@
-use std::{fs::{OpenOptions, File}, io::Write};
+use std::{
+    fs::File,
+    io::{self, Write},
+};
 
 use minreq::{Error, Request, Response};
 use regex::Regex;
@@ -49,13 +52,23 @@ fn get_page(url: &str) -> Result<String, Error> {
     Ok(String::from(body))
 }
 
-fn save_image(url: &str, filename: &str) -> Result<(), Error> {
+fn get_image(url: &str) -> Result<Vec<u8>, Error> {
     let req: Request = minreq::get(url);
     let res: Response = req.send()?;
-    let body = res.as_bytes();
-    let mut file = File::create(filename)?;
-    file.write_all(body).unwrap();
-    Ok(())
+    Ok(res.as_bytes().to_vec())
+}
+
+fn save_image(url: &str, filename: &str) -> Result<(), io::Error> {
+    if let Ok(body) = get_image(url) {
+        let mut file: File = File::create(filename)?;
+        file.write_all(&body)?;
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Could not download image!",
+        ))
+    }
 }
 
 fn get_mangas_page() -> Result<String, Error> {
@@ -97,7 +110,8 @@ fn get_mangas_from_page(page: &str) -> Vec<Manga> {
 }
 
 fn get_chapters_from_page(page: &str) -> Vec<Chapter> {
-    let re_chapter: Regex = Regex::new(r#"(?s)href="/chapters/(\d*)/([^"]*)"[^>]*>(.*?)</a>"#).unwrap();
+    let re_chapter: Regex =
+        Regex::new(r#"(?s)href="/chapters/(\d*)/([^"]*)"[^>]*>(.*?)</a>"#).unwrap();
     let re_name: Regex = Regex::new(r"<div[^>]*>\s*([^<]+)\s*</div>").unwrap();
 
     let mut chapters: Vec<Chapter> = Vec::new();
@@ -124,8 +138,9 @@ fn get_chapters_from_page(page: &str) -> Vec<Chapter> {
 }
 
 fn get_images_from_page(page: &str) -> Vec<String> {
-    let re: Regex = Regex::new(r#"(?s)<picture[^>]*>.*?<img[^>]*?src="([^"]+)"[^>]*>.*?</picture>"#).unwrap();
-    
+    let re: Regex =
+        Regex::new(r#"(?s)<picture[^>]*>.*?<img[^>]*?src="([^"]+)"[^>]*>.*?</picture>"#).unwrap();
+
     let mut images: Vec<String> = Vec::new();
     for cap in re.captures_iter(page) {
         images.push(cap[1].to_string());
