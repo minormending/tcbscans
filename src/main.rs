@@ -21,9 +21,12 @@ enum Actions {
         /// Slug name of the series
         #[clap(short, long)]
         slug: Option<String>,
-        /// Id of the chapter
+        /// Id of the series
         #[clap(short, long)]
         id: Option<u8>,
+        /// Download all chapters of the series to a directory
+        #[clap(long)]
+        download: Option<String>,
     },
     /// Save an entire chapter to disk
     Manga {
@@ -53,7 +56,7 @@ fn main() {
                 println!("{}", &json);
             }
         }
-        Actions::Chapters { slug, id } => {
+        Actions::Chapters { slug, id, download } => {
             let mangas: Vec<Series> = series::get_series();
             let mut manga: Option<&Series> = None;
             if let Some(slug) = slug {
@@ -68,9 +71,17 @@ fn main() {
 
             let manga: &Series = manga.expect("Unable to find manga using slug or id.");
             let chapters: Vec<Chapter> = chapters::get_chapters(manga);
-            for chapter in chapters {
-                let json = serde_json::to_string(&chapter).unwrap();
-                println!("{}", &json)
+            
+            if let Some(download) = download {
+                for chapter in &chapters {
+                    download::save_chapter_pages(chapter, &download)
+                        .expect("Unable to save chapter!");
+                } 
+            } else {
+                for chapter in &chapters {
+                    let json = serde_json::to_string(&chapter).unwrap();
+                    println!("{}", &json)
+                }
             }
         }
         Actions::Manga {
