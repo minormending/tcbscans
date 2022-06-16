@@ -22,17 +22,28 @@ pub struct Chapter {
 }
 
 pub fn get_mangas() -> Vec<Manga> {
-    let html: String = get_mangas_page().expect("Unable to get mangas from site.");
+    let html: String = get_page("https://onepiecechapters.com/projects")
+        .expect("Unable to get mangas from site.");
     get_mangas_from_page(&html)
 }
 
 pub fn get_chapters(manga: &Manga) -> Vec<Chapter> {
-    let html = get_chapters_page(&manga).expect("Unable to get chapters from site.");
+    let url: String = format!(
+        "https://onepiecechapters.com/mangas/{}/{}",
+        manga.id, manga.slug
+    );
+    let html = get_page(&url)
+        .expect("Unable to get chapters from site.");
     get_chapters_from_page(&html)
 }
 
 pub fn get_chapter_pages(chapter: &Chapter) -> Vec<String> {
-    let html = get_chapter_page(&chapter).expect("Unable to get chapter pages");
+    let url: String = format!(
+        "https://onepiecechapters.com/chapters/{}/{}",
+        chapter.id, chapter.slug
+    );
+    let html: String = get_page(&url)
+        .expect("Unable to get chapter pages");
     get_images_from_page(&html)
 }
 
@@ -72,26 +83,6 @@ fn save_image(url: &str, filename: &str) -> Result<(), io::Error> {
             "Could not download image!",
         ))
     }
-}
-
-fn get_mangas_page() -> Result<String, Error> {
-    get_page("https://onepiecechapters.com/projects")
-}
-
-fn get_chapters_page(manga: &Manga) -> Result<String, Error> {
-    let url: String = format!(
-        "https://onepiecechapters.com/mangas/{}/{}",
-        manga.id, manga.slug
-    );
-    get_page(&url)
-}
-
-fn get_chapter_page(chapter: &Chapter) -> Result<String, Error> {
-    let url: String = format!(
-        "https://onepiecechapters.com/chapters/{}/{}",
-        chapter.id, chapter.slug
-    );
-    get_page(&url)
 }
 
 fn get_mangas_from_page(page: &str) -> Vec<Manga> {
