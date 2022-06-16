@@ -1,5 +1,9 @@
 use clap::{Parser, Subcommand};
-use tcbscans::{get_chapters, get_mangas, save_chapter_pages, Chapter, Manga};
+use tcbscans::{
+    chapters::{self, Chapter},
+    download,
+    series::{self, Series},
+};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -10,11 +14,11 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Actions {
-    /// List all supported mangas
+    /// List all supported series
     Series,
-    /// List all chapters for a supported manga
+    /// List all chapters for a supported series
     Chapters {
-        /// Slug name of the manga
+        /// Slug name of the series
         #[clap(short, long)]
         slug: Option<String>,
         /// Id of the chapter
@@ -42,7 +46,7 @@ fn main() {
     let cli = Args::parse();
     match &cli.action {
         Actions::Series => {
-            let mangas: Vec<Manga> = get_mangas();
+            let mangas: Vec<Series> = series::get_series();
             for manga in mangas {
                 let json = serde_json::to_string(&manga)
                     .expect(&format!("Unable to serialize manga: {:?}", &manga));
@@ -50,8 +54,8 @@ fn main() {
             }
         }
         Actions::Chapters { slug, id } => {
-            let mangas: Vec<Manga> = get_mangas();
-            let mut manga: Option<&Manga> = None;
+            let mangas: Vec<Series> = series::get_series();
+            let mut manga: Option<&Series> = None;
             if let Some(slug) = slug {
                 manga = mangas.iter().find(|&m| &m.slug == slug);
             }
@@ -62,19 +66,26 @@ fn main() {
                 }
             }
 
-            let manga: &Manga = manga.expect("Unable to find manga using slug or id.");
-            let chapters: Vec<Chapter> = get_chapters(manga);
+            let manga: &Series = manga.expect("Unable to find manga using slug or id.");
+            let chapters: Vec<Chapter> = chapters::get_chapters(manga);
             for chapter in chapters {
                 let json = serde_json::to_string(&chapter).unwrap();
                 println!("{}", &json)
             }
         }
-        Actions::Chapter { series, slug, id, directory } => {
-            let mangas: Vec<Manga> = get_mangas();
-            let manga = mangas.iter().find(|&m| &m.slug == series)
+        Actions::Chapter {
+            series,
+            slug,
+            id,
+            directory,
+        } => {
+            let mangas: Vec<Series> = series::get_series();
+            let manga = mangas
+                .iter()
+                .find(|&m| &m.slug == series)
                 .expect("Could not find series!");
-            
-            let chapters: Vec<Chapter> = get_chapters(manga);
+
+            let chapters: Vec<Chapter> = chapters::get_chapters(manga);
             let mut chapter: Option<&Chapter> = None;
             if let Some(slug) = slug {
                 chapter = chapters.iter().find(|&c| &c.slug == slug);
@@ -86,7 +97,7 @@ fn main() {
                 }
             }
             let chapter = chapter.expect("Could not find chapter!");
-            save_chapter_pages(chapter, directory).expect("Unable to save chapter!");
+            download::save_chapter_pages(chapter, directory).expect("Unable to save chapter!");
         }
     }
 }
