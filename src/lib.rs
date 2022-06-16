@@ -1,3 +1,5 @@
+use std::{fs::{OpenOptions, File}, io::Write};
+
 use minreq::{Error, Request, Response};
 use regex::Regex;
 use serde::Serialize;
@@ -26,11 +28,34 @@ pub fn get_chapters(manga: &Manga) -> Vec<Chapter> {
     get_chapters_from_page(&html)
 }
 
+pub fn get_chapter_pages(chapter: &Chapter) -> Vec<String> {
+    let html = get_chapter_page(&chapter).expect("Unable to get chapter pages");
+    get_images_from_page(&html)
+}
+
+pub fn save_chapter_pages(chapter: &Chapter) {
+    let images = get_chapter_pages(chapter);
+    for (idx, url) in images.iter().enumerate() {
+        let filename = format!("{}-page{}.png", chapter.slug, idx);
+        println!("{}", &filename);
+        save_image(url, &filename).unwrap();
+    }
+}
+
 fn get_page(url: &str) -> Result<String, Error> {
     let req: Request = minreq::get(url);
     let res: Response = req.send()?;
     let body: &str = res.as_str()?;
     Ok(String::from(body))
+}
+
+fn save_image(url: &str, filename: &str) -> Result<(), Error> {
+    let req: Request = minreq::get(url);
+    let res: Response = req.send()?;
+    let body = res.as_bytes();
+    let mut file = File::create(filename)?;
+    file.write_all(body).unwrap();
+    Ok(())
 }
 
 fn get_mangas_page() -> Result<String, Error> {
@@ -41,6 +66,14 @@ fn get_chapters_page(manga: &Manga) -> Result<String, Error> {
     let url: String = format!(
         "https://onepiecechapters.com/mangas/{}/{}",
         manga.id, manga.slug
+    );
+    get_page(&url)
+}
+
+fn get_chapter_page(chapter: &Chapter) -> Result<String, Error> {
+    let url: String = format!(
+        "https://onepiecechapters.com/chapters/{}/{}",
+        chapter.id, chapter.slug
     );
     get_page(&url)
 }
@@ -64,19 +97,19 @@ fn get_mangas_from_page(page: &str) -> Vec<Manga> {
 }
 
 fn get_chapters_from_page(page: &str) -> Vec<Chapter> {
-    let re: Regex = Regex::new(r#"(?s)href="/chapters/(\d*)/([^"]*)"[^>]*>(.*?)</a>"#).unwrap();
+    let re_chapter: Regex = Regex::new(r#"(?s)href="/chapters/(\d*)/([^"]*)"[^>]*>(.*?)</a>"#).unwrap();
     let re_name: Regex = Regex::new(r"<div[^>]*>\s*([^<]+)\s*</div>").unwrap();
 
     let mut chapters: Vec<Chapter> = Vec::new();
-    for cap in re.captures_iter(page) {
-        let name: &str = cap[3].trim();
-        if name.is_empty() {
+    for cap in re_chapter.captures_iter(page) {
+        let name_html: &str = cap[3].trim();
+        if name_html.is_empty() {
             continue;
         }
 
         // sometimes the name is `Series Chapter X: Title`
         let names = re_name
-            .captures_iter(name)
+            .captures_iter(name_html)
             .map(|c| c[1].to_string())
             .collect::<Vec<String>>();
         let name: String = names.join(": ");
@@ -88,4 +121,14 @@ fn get_chapters_from_page(page: &str) -> Vec<Chapter> {
         });
     }
     chapters
+}
+
+fn get_images_from_page(page: &str) -> Vec<String> {
+    let re: Regex = Regex::new(r#"(?s)<picture[^>]*>.*?<img[^>]*?src="([^"]+)"[^>]*>.*?</picture>"#).unwrap();
+    
+    let mut images: Vec<String> = Vec::new();
+    for cap in re.captures_iter(page) {
+        images.push(cap[1].to_string());
+    }
+    images
 }

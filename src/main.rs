@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use tcbscans::{get_chapters, get_mangas, Manga, Chapter};
+use tcbscans::{get_chapters, get_mangas, Manga, Chapter, save_chapter_pages};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -53,6 +53,9 @@ fn main() {
                 let json = serde_json::to_string(&chapter).unwrap();
                 println!("{}", &json)
             }
+
+            let chapter = &chapters[0];
+            save_chapter_pages(chapter);
         }
     }
 }
