@@ -25,8 +25,8 @@ enum Actions {
         #[clap(short, long)]
         id: Option<u8>,
     },
-    /// Save a chapter to disk
-    Chapter {
+    /// Save an entire chapter to disk
+    Manga {
         /// Slug name of the series
         #[clap()]
         series: String,
@@ -73,7 +73,7 @@ fn main() {
                 println!("{}", &json)
             }
         }
-        Actions::Chapter {
+        Actions::Manga {
             series,
             slug,
             id,
