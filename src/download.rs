@@ -10,6 +10,10 @@ use crate::util;
 
 pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::Error> {
     let folder = Path::new(&directory).join(&chapter.slug);
+    if folder.exists() {
+        println!("We have already downloaded the chapter, skipping...");
+        return Ok(());
+    }
     fs::create_dir_all(&folder)?;
 
     let images: Vec<String> = manga::get_manga_pages(chapter);
