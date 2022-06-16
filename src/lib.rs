@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{File, create_dir_all},
     io::{self, Write},
 };
 
@@ -36,13 +36,16 @@ pub fn get_chapter_pages(chapter: &Chapter) -> Vec<String> {
     get_images_from_page(&html)
 }
 
-pub fn save_chapter_pages(chapter: &Chapter) {
-    let images = get_chapter_pages(chapter);
+pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::Error> {
+    create_dir_all(directory)?;
+
+    let images: Vec<String> = get_chapter_pages(chapter);
     for (idx, url) in images.iter().enumerate() {
-        let filename = format!("{}-page{}.png", chapter.slug, idx);
+        let filename = format!("{}/{}-page{}.png", directory, chapter.slug, idx);
         println!("{}", &filename);
-        save_image(url, &filename).unwrap();
+        save_image(url, &filename)?;
     }
+    Ok(())
 }
 
 fn get_page(url: &str) -> Result<String, Error> {
