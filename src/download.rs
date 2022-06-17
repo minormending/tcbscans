@@ -24,8 +24,8 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
             .to_str()
             .expect("Unable to create path to manga.")
             .to_owned();
-        println!("{}", &filename);
         if !Path::new(&filename).exists() {
+            println!("{}", &filename);
             save_image(url, &filename)?;
         }
         minimize_image(&filename).unwrap();
@@ -47,16 +47,23 @@ fn save_image(url: &str, filename: &str) -> Result<(), io::Error> {
 }
 
 fn minimize_image(filename: &str) -> Result<(), imagequant::Error> {
+    let meta = fs::File::open(&filename).unwrap().metadata().unwrap();
+    //println!("initial file length: {}", meta.len() / 1024);
+    let original_size = meta.len();
+
     let bitmap = lodepng::decode32_file(&filename)
         .expect("Unable to decode page for compression.");
 
     let mut attr = imagequant::new();
-    attr.set_quality(60, 80)?;
+    attr.set_quality(50, 80)?;
 
     let mut image = attr
         .new_image(bitmap.buffer.to_vec(), bitmap.width, bitmap.height, 0.0)?;
 
-    let mut quant = attr.quantize(&mut image)?;
+    let mut quant = match attr.quantize(&mut image) {
+        Ok(quant) => quant,
+        Err(err) => return Ok(()),
+    };
     quant.set_dithering_level(1.0)?;
 
     let (palette, pixels) = quant.remapped(&mut image)?;
@@ -69,6 +76,9 @@ fn minimize_image(filename: &str) -> Result<(), imagequant::Error> {
 
     let mut file: File = File::create(&filename).unwrap();
     file.write_all(&png_pixels).unwrap();
+
+    let meta = fs::File::open(&filename).unwrap().metadata().unwrap();
+    println!("{} {}%", &&filename, (100.0 - (meta.len() as f64 / original_size as f64) * 100.0) as u64);
 
     Ok(())
 }
