@@ -71,12 +71,12 @@ fn main() {
 
             let manga: &Series = manga.expect("Unable to find manga using slug or id.");
             let chapters: Vec<Chapter> = chapters::get_chapters(manga);
-            
+
             if let Some(download) = download {
                 for chapter in &chapters {
                     download::save_chapter_pages(chapter, &download)
                         .expect("Unable to save chapter!");
-                } 
+                }
             } else {
                 for chapter in &chapters {
                     let json = serde_json::to_string(&chapter).unwrap();
