@@ -4,8 +4,6 @@ use std::{
     path::Path,
 };
 
-use image::GenericImageView;
-
 use crate::chapters::Chapter;
 use crate::manga;
 use crate::util;
@@ -48,33 +46,29 @@ fn save_image(url: &str, filename: &str) -> Result<(), io::Error> {
     }
 }
 
-fn minimize_image(filename: &str) -> Result<(), io::Error> {
-    let img = image::open(&filename).unwrap();
-    let dim = img.dimensions();
+fn minimize_image(filename: &str) -> Result<(), imagequant::Error> {
+    let bitmap = lodepng::decode32_file(&filename)
+        .expect("Unable to decode page for compression.");
 
-    let mut rgba: Vec<imagequant::RGBA> = Vec::new();
-    for i in img.pixels() {
-        let p = i.2;
-        rgba.push(imagequant::RGBA {
-            r: p.0[0],
-            g: p.0[1],
-            b: p.0[2],
-            a: p.0[3],
-        });
-    }
+    let mut attr = imagequant::new();
+    attr.set_quality(60, 80)?;
 
-    let mut lib = imagequant::new();
-    lib.set_quality(70, 90).unwrap();
+    let mut image = attr
+        .new_image(bitmap.buffer.to_vec(), bitmap.width, bitmap.height, 0.0)?;
 
-    let mut img2 = lib.new_image(rgba, dim.0.try_into().unwrap(), dim.1.try_into().unwrap(), 0.0)
+    let mut quant = attr.quantize(&mut image)?;
+    quant.set_dithering_level(1.0)?;
+
+    let (palette, pixels) = quant.remapped(&mut image)?;
+
+    let mut encoder = lodepng::Encoder::new();
+    encoder.set_palette(&palette).unwrap();
+    let png_pixels = encoder
+        .encode(&pixels, bitmap.width, bitmap.height)
         .unwrap();
-    let mut res = lib.quantize(&mut img2).unwrap();
-    res.set_dithering_level(1.0).unwrap();
 
-    let (_pal, pixels) = res.remapped(&mut img2).unwrap();
+    let mut file: File = File::create(&filename).unwrap();
+    file.write_all(&png_pixels).unwrap();
 
-    //image::save_buffer("test.png", &pixels, dim.0.try_into().unwrap(), dim.1.try_into().unwrap(), image::ColorType::Rgb8).unwrap();
-    let mut file: File = File::create("test.png")?;
-    file.write_all(&pixels)?;
     Ok(())
 }
