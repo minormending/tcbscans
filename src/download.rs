@@ -28,7 +28,9 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
             println!("{}", &filename);
             save_image(url, &filename)?;
         }
-        minimize_image(&filename).unwrap();
+        if minimize_image(&filename).is_err() {
+            println!("Error minimizing {}, skipping.", &filename);
+        }
     }
     Ok(())
 }
