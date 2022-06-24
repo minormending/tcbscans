@@ -2,7 +2,7 @@ use rayon::prelude::*;
 use std::{
     fs::{self, File},
     io::{self, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use crate::chapters::Chapter;
@@ -12,22 +12,31 @@ use crate::util;
 pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::Error> {
     let folder: PathBuf = Path::new(&directory).join(&chapter.slug);
     if folder.exists() {
-        println!("We have already downloaded the chapter, skipping...");
+        println!(
+            "We have already downloaded chapter {}, skipping...",
+            &chapter.slug
+        );
         //return Ok(());
     }
     fs::create_dir_all(&folder)?;
 
     let images: Vec<String> = manga::get_manga_pages(chapter);
-        let filename = folder
-            .join(&page)
     images.par_iter().enumerate().for_each(|(idx, url)| {
         let page: String = format!("{}-page{}.png", &chapter.slug, idx);
+        let filename: PathBuf = folder.join(&page);
+        let filename: String = filename
             .to_str()
-            .expect("Unable to create path to manga.")
+            .expect(&format!(
+                "Unable to join path to manga: {}/{}",
+                folder.to_str().unwrap(),
+                &page
+            ))
             .to_owned();
+            
         if !Path::new(&filename).exists() {
             println!("{}", &filename);
-            save_image(url, &filename)?;
+            save_image(url, &filename)
+                .expect(&format!("Unable to download and save file: {}", &filename));
         }
         if minimize_image(&filename).is_err() {
             println!("Error minimizing {}, skipping.", &filename);
