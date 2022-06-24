@@ -63,18 +63,16 @@ fn minimize_image(filename: &str) -> Result<(), imagequant::Error> {
     //println!("initial file length: {}", meta.len() / 1024);
     let original_size = meta.len();
 
-    let bitmap = lodepng::decode32_file(&filename)
-        .expect("Unable to decode page for compression.");
+    let bitmap = lodepng::decode32_file(&filename).expect("Unable to decode page for compression.");
 
     let mut attr = imagequant::new();
     attr.set_quality(50, 80)?;
 
-    let mut image = attr
-        .new_image(bitmap.buffer.to_vec(), bitmap.width, bitmap.height, 0.0)?;
+    let mut image = attr.new_image(bitmap.buffer.to_vec(), bitmap.width, bitmap.height, 0.0)?;
 
     let mut quant = match attr.quantize(&mut image) {
         Ok(quant) => quant,
-        Err(err) => return Ok(()),
+        Err(_err) => return Ok(()),
     };
     quant.set_dithering_level(1.0)?;
 
@@ -90,7 +88,11 @@ fn minimize_image(filename: &str) -> Result<(), imagequant::Error> {
     file.write_all(&png_pixels).unwrap();
 
     let meta = fs::File::open(&filename).unwrap().metadata().unwrap();
-    println!("{} {}%", &&filename, (100.0 - (meta.len() as f64 / original_size as f64) * 100.0) as u64);
+    println!(
+        "{} {}%",
+        &&filename,
+        (100.0 - (meta.len() as f64 / original_size as f64) * 100.0) as u64
+    );
 
     Ok(())
 }
