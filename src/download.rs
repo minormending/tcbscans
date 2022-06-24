@@ -16,7 +16,7 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
             "We have already downloaded chapter {}, skipping...",
             &chapter.slug
         );
-        //return Ok(());
+        return Ok(());
     }
     fs::create_dir_all(&folder)?;
 
@@ -32,7 +32,7 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
                 &page
             ))
             .to_owned();
-            
+
         if !Path::new(&filename).exists() {
             println!("{}", &filename);
             save_image(url, &filename)
