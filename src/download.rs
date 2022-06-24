@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::{
     fs::{self, File},
     io::{self, Write},
@@ -17,10 +18,10 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
     fs::create_dir_all(&folder)?;
 
     let images: Vec<String> = manga::get_manga_pages(chapter);
-    for (idx, url) in images.iter().enumerate() {
         let page = format!("{}-page{}.png", &chapter.slug, idx);
         let filename = folder
             .join(&page)
+    images.par_iter().enumerate().for_each(|(idx, url)| {
             .to_str()
             .expect("Unable to create path to manga.")
             .to_owned();
@@ -31,7 +32,7 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
         if minimize_image(&filename).is_err() {
             println!("Error minimizing {}, skipping.", &filename);
         }
-    }
+    });
     Ok(())
 }
 
