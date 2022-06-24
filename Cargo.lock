@@ -588,6 +588,7 @@ dependencies = [
  "imagequant",
  "lodepng",
  "minreq",
+ "rayon",
  "regex",
  "serde",
  "serde_json",
