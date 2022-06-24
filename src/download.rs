@@ -1,6 +1,8 @@
+use imagequant::Attributes;
+use lodepng::Encoder;
 use rayon::prelude::*;
 use std::{
-    fs::{self, File},
+    fs::{self, File, Metadata},
     io::{self, Write},
     path::{Path, PathBuf},
 };
@@ -59,18 +61,25 @@ fn save_image(url: &str, filename: &str) -> Result<(), io::Error> {
 }
 
 fn minimize_image(filename: &str) -> Result<(), imagequant::Error> {
-    let meta = fs::File::open(&filename).unwrap().metadata().unwrap();
-    //println!("initial file length: {}", meta.len() / 1024);
-    let original_size = meta.len();
+    let file: File = fs::File::open(&filename)
+        .expect(&format!("Could not open image for reading: {}", &filename));
+    let meta: Metadata = file
+        .metadata()
+        .expect(&format!("Could not load metadata for image: {}", &filename));
+    let original_size: u64 = meta.len();
 
-    let bitmap = lodepng::decode32_file(&filename).expect("Unable to decode page for compression.");
+    let bitmap = lodepng::decode32_file(&filename).expect(&format!(
+        "Unable to decode image for compression: {}",
+        &filename
+    ));
 
-    let mut attr = imagequant::new();
+    let mut attr: Attributes = imagequant::new();
     attr.set_quality(50, 80)?;
 
-    let mut image = attr.new_image(bitmap.buffer.to_vec(), bitmap.width, bitmap.height, 0.0)?;
+    let mut image: imagequant::Image =
+        attr.new_image(bitmap.buffer.to_vec(), bitmap.width, bitmap.height, 0.0)?;
 
-    let mut quant = match attr.quantize(&mut image) {
+    let mut quant: imagequant::QuantizationResult = match attr.quantize(&mut image) {
         Ok(quant) => quant,
         Err(_err) => return Ok(()),
     };
@@ -78,21 +87,30 @@ fn minimize_image(filename: &str) -> Result<(), imagequant::Error> {
 
     let (palette, pixels) = quant.remapped(&mut image)?;
 
-    let mut encoder = lodepng::Encoder::new();
-    encoder.set_palette(&palette).unwrap();
-    let png_pixels = encoder
-        .encode(&pixels, bitmap.width, bitmap.height)
-        .unwrap();
+    let mut encoder: Encoder = lodepng::Encoder::new();
+    encoder.set_palette(&palette).expect(&format!(
+        "Unable to set palette for minimized image: {}",
+        &filename
+    ));
+    let png_pixels: Vec<u8> =
+        encoder
+            .encode(&pixels, bitmap.width, bitmap.height)
+            .expect(&format!(
+                "Unable to encode pixels for minimize image: {}",
+                &filename
+            ));
 
-    let mut file: File = File::create(&filename).unwrap();
-    file.write_all(&png_pixels).unwrap();
+    let mut file: File =
+        File::create(&filename).expect(&format!("Could not open image for writing: {}", &filename));
+    file.write_all(&png_pixels)
+        .expect(&format!("Unable to save minimized image: {}", &filename));
 
-    let meta = fs::File::open(&filename).unwrap().metadata().unwrap();
-    println!(
-        "{} {}%",
-        &&filename,
-        (100.0 - (meta.len() as f64 / original_size as f64) * 100.0) as u64
-    );
+    let meta: Metadata = file.metadata().expect(&format!(
+        "Could not load metadata for minimized image: {}",
+        &filename
+    ));
+    let diff: u64 = (100.0 - (meta.len() as f64 / original_size as f64) * 100.0) as u64;
+    println!("{} {}%", &filename, diff);
 
     Ok(())
 }
