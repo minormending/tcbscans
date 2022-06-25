@@ -3,7 +3,7 @@ use regex::Regex;
 use crate::chapters::Chapter;
 use crate::util;
 
-pub fn get_manga_pages(chapter: &Chapter) -> Vec<String> {
+pub fn get_pages(chapter: &Chapter) -> Vec<String> {
     let url: String = format!(
         "https://onepiecechapters.com/chapters/{}/{}",
         chapter.id, chapter.slug
