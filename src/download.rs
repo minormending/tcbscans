@@ -22,7 +22,7 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
     }
     fs::create_dir_all(&folder)?;
 
-    let images: Vec<String> = manga::get_manga_pages(chapter);
+    let images: Vec<String> = manga::get_pages(chapter);
     images.par_iter().enumerate().for_each(|(idx, url)| {
         let page: String = format!("{}-page{}.png", &chapter.slug, idx);
         let filename: PathBuf = folder.join(&page);
