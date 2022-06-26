@@ -4,7 +4,7 @@ use rayon::prelude::*;
 use std::{
     fs::{self, File, Metadata},
     io::{self, Write},
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, ffi::OsStr,
 };
 
 use crate::chapters::Chapter;
@@ -12,6 +12,7 @@ use crate::manga;
 use crate::util;
 
 pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::Error> {
+    let parallel: bool = true;
     let folder: PathBuf = Path::new(&directory).join(&chapter.slug);
     if folder.exists() {
         println!(
@@ -23,28 +24,43 @@ pub fn save_chapter_pages(chapter: &Chapter, directory: &str) -> Result<(), io::
     fs::create_dir_all(&folder)?;
 
     let images: Vec<String> = manga::get_pages(chapter);
-    images.par_iter().enumerate().for_each(|(idx, url)| {
-        let page: String = format!("{}-page{}.png", &chapter.slug, idx);
-        let filename: PathBuf = folder.join(&page);
-        let filename: String = filename
-            .to_str()
-            .expect(&format!(
-                "Unable to join path to manga: {}/{}",
-                folder.to_str().unwrap(),
-                &page
-            ))
-            .to_owned();
-
-        if !Path::new(&filename).exists() {
-            println!("{}", &filename);
-            save_image(url, &filename)
-                .expect(&format!("Unable to download and save file: {}", &filename));
+    if parallel {
+        images.par_iter().enumerate().for_each(|(idx, url)| {
+            save_and_process_image(chapter, &folder, idx, url);
+        });
+    } else {
+        for (idx, url) in images.iter().enumerate() {
+            save_and_process_image(chapter, &folder, idx, url);
         }
-        if minimize_image(&filename).is_err() {
-            println!("Error minimizing {}, skipping.", &filename);
-        }
-    });
+    }
     Ok(())
+}
+
+fn save_and_process_image(chapter: &Chapter, folder: &PathBuf, idx: usize, url: &str) {
+    let ext: &str = Path::new(url)
+        .extension()
+        .and_then(OsStr::to_str)
+        .expect(&format!("Unable to parse extension from url: {}", url));
+    
+    let page: String = format!("{}-page{}.{}", &chapter.slug, idx, ext);
+    let filename: PathBuf = folder.join(&page);
+    let filename: String = filename
+        .to_str()
+        .expect(&format!(
+            "Unable to join path to manga: {}/{}",
+            folder.to_str().unwrap(),
+            &page
+        ))
+        .to_owned();
+    
+    if !Path::new(&filename).exists() {
+        println!("{}", &filename);
+        save_image(url, &filename)
+            .expect(&format!("Unable to download and save file: {}", &filename));
+    }
+    if ext.to_lowercase() == "png" && minimize_image(&filename).is_err() {
+        println!("Error minimizing {}, skipping.", &filename);
+    }
 }
 
 fn save_image(url: &str, filename: &str) -> Result<(), io::Error> {
