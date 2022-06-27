@@ -2,9 +2,10 @@ use imagequant::Attributes;
 use lodepng::Encoder;
 use rayon::prelude::*;
 use std::{
+    ffi::OsStr,
     fs::{self, File, Metadata},
     io::{self, Write},
-    path::{Path, PathBuf}, ffi::OsStr,
+    path::{Path, PathBuf},
 };
 
 use crate::chapters::Chapter;
@@ -41,7 +42,7 @@ fn save_and_process_image(chapter: &Chapter, folder: &PathBuf, idx: usize, url: 
         .extension()
         .and_then(OsStr::to_str)
         .expect(&format!("Unable to parse extension from url: {}", url));
-    
+
     let page: String = format!("{}-page{}.{}", &chapter.slug, idx, ext);
     let filename: PathBuf = folder.join(&page);
     let filename: String = filename
@@ -52,7 +53,7 @@ fn save_and_process_image(chapter: &Chapter, folder: &PathBuf, idx: usize, url: 
             &page
         ))
         .to_owned();
-    
+
     if !Path::new(&filename).exists() {
         println!("{}", &filename);
         save_image(url, &filename)
