@@ -171,3 +171,16 @@ images/attack-on-titan-chapter-139/attack-on-titan-chapter-139-page28.png
 images/attack-on-titan-chapter-139/attack-on-titan-chapter-139-page42.png
 images/attack-on-titan-chapter-139/attack-on-titan-chapter-139-page49.png
 ```
+
+# Docker
+The CLI can be built and run via a Docker container. Pre-built containers can be found at:
+https://hub.docker.com/repository/docker/minormending/tcbscans
+
+```
+>>> docker build -t tcbscans .
+>>> docker run -v /home/user/images/:/images/:rw tcbscans manga  attack-on-titan --id 30 /images/
+
+/images/attack-on-titan-chapter-139/attack-on-titan-chapter-139-page28.png
+/images/attack-on-titan-chapter-139/attack-on-titan-chapter-139-page42.png
+/images/attack-on-titan-chapter-139/attack-on-titan-chapter-139-page49.png
+```
