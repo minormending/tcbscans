@@ -7,7 +7,7 @@ repository = "https://github.com/minormending/tcbscans"
 readme = "README.md"
 license = "MIT"
 edition = "2021"
-keywords = ["manga", "tcbscans", "one-piece", "attack-on-titan", "bleach", "naruto"]
+keywords = ["manga", "tcbscans", "one-piece", "attack-on-titan", "bleach"]
 categories = ["command-line-utilities"]
 
 [dependencies]
