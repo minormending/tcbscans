@@ -174,7 +174,7 @@ images/attack-on-titan-chapter-139/attack-on-titan-chapter-139-page49.png
 
 # Docker
 The CLI can be built and run via a Docker container. Pre-built containers can be found at:
-https://hub.docker.com/repository/docker/minormending/tcbscans
+https://hub.docker.com/r/minormending/tcbscans
 
 ```
 >>> docker build -t tcbscans .
